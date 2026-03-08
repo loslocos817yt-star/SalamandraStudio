@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salamandra Studio - Inicio</title>
+<style>
+    * { 
+        box-sizing: border-box; 
+        margin: 0; 
+        padding: 0; 
+    }
+    
+    body { 
+        background: #0a0a0a; 
+        color: #00ffcc; 
+        font-family: monospace; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        height: 100vh; 
+        overflow: hidden; 
+    }
+    
+    .container {
+        background: #151515;
+        border: 2px solid #00ffcc;
+        padding: 40px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 0 25px rgba(0, 255, 204, 0.15);
+        width: 320px;
+    }
+    
+    h1 { 
+        font-size: 24px; 
+        margin-bottom: 30px; 
+        color: #ff0055; 
+        text-shadow: 0 0 12px #f058; 
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .menu-btn {
+        display: block;
+        background: #00ffcc;
+        color: #000;
+        text-decoration: none;
+        padding: 14px;
+        margin: 16px 0;
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        border: 2px solid transparent;
+    }
+    
+    .menu-btn:hover {
+        background: #fff;
+        transform: scale(1.04);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    }
+    
+    /* Pequeño detalle visual abajo */
+    .footer-text {
+        margin-top: 25px;
+        font-size: 10px;
+        color: #666;
+    }
+</style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🦎 Salamandra Studio</h1>
+        
+        <a href="HTML/build.html" class="menu-btn">🧱 Modelador</a>
+        <a href="HTML/visor.html" class="menu-btn">👁️ Visualizador</a>
+        <a href="HTML/map.html" class="menu-btn">🗺️ Mapper</a>
+        
+        <div class="footer-text">v1.0 Lite Edition</div>
+    </div>
+
+</body>
+</html>
