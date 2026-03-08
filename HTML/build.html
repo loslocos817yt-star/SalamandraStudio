@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Salamandra Studio Lite</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0a0a; color: #00ffcc; font: 11px monospace; overflow: hidden; display: flex; }
+#sb { width: 310px; background: #151515; border-right: 2px solid #00ffcc; padding: 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; height: 100vh; }
+canvas { flex: 1; outline: none; display: block; }
+h2 { font-size: 14px; margin: 0 0 6px; text-align: center; color: #ff0055; text-shadow: 0 0 8px #f058; }
+h3 { color: #00ffcc; border-bottom: 1px solid #333; margin: 4px 0 2px; font-size: 10px; text-transform: uppercase; }
+
+/* Botones 5% más grandes */
+button { background: #00ffcc; border: none; padding: 4.2px 6.3px; cursor: pointer; font-weight: 700; border-radius: 2px; color: #000; font-size: 10.5px; transition: .1s; }
+button:hover { background: #fff; transform: scale(1.02); }
+.active { background: #f058!important; color: #fff; }
+.danger { background: #f44!important; color: #fff; }
+.warn { background: #fc0!important; color: #000; }
+
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+.g6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+.cs { background: #1a1a1a; padding: 4px; border-radius: 3px; border: 1px solid #333; }
+.hex { display: flex; gap: 2px; align-items: center; margin-bottom: 3px; }
+.hex input { flex: 1; background: #222; border: 1px solid #0ff; color: #0ff; padding: 2px 4px; font: 10px monospace; }
+.hp { width: 20px; height: 20px; border: 2px solid #fff; border-radius: 2px; cursor: pointer; }
+.sw { width: 18px; height: 18px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; transition: .1s; }
+.sw:hover { transform: scale(1.15); z-index: 2; }
+.sw.a { border-color: #fff; box-shadow: 0 0 0 2px #000; }
+.sr { display: flex; align-items: center; gap: 4px; margin: 2px 0; font-size: 9px; }
+.sr label { min-width: 45px; color: #888; }
+.sr input { flex: 1; accent-color: #0ff; height: 3px; cursor: pointer; }
+.sv { min-width: 25px; text-align: right; color: #0ff; font-size: 9px; }
+
+/* Grid de Texturas Actualizado */
+.tg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.tb { background: #222; border: 1px solid #444; padding: 3px; font-size: 9px; text-align: center; cursor: pointer; border-radius: 3px; transition: 0.1s; }
+.tb:hover { border-color: #0ff; }
+.tb.a { border-color: #f055; background: #333; box-shadow: 0 0 4px #f055; }
+.tp { width: 100%; height: 24px; border-radius: 2px; margin-bottom: 2px; background-size: cover; background-position: center; border: 1px solid #000;}
+
+.mp { display: flex; align-items: center; gap: 4px; padding: 3px; background: #1a1a1a; border-radius: 2px; margin: 2px 0; }
+.mb { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: inset 0 -4px 6px #0008; }
+.mi { font-size: 9px; color: #888; line-height: 1.2; }
+.mi span { color: #0ff; display: block; }
+.inf { font-size: 9px; color: #666; line-height: 1.2; margin-top: 4px; background: #111; padding: 4px; border-radius: 2px; border-left: 2px solid #0ff; }
+</style>
+</head>
+<body>
+
+<div id="sb">
+    <h2>🦎 SALAMANDRA LITE</h2>
+    
+    <h3>➕ OBJETOS</h3>
+    <div class="g4">
+        <button id="bB">🧱Cubo</button>
+        <button id="bC">🗼Cil</button>
+        <button id="bS">⚪Esfera</button>
+        <button id="bP">📄Plano</button>
+        <button id="bK">🔺Cono</button>
+        <button id="bT">🍩Toro</button>
+        <button id="bD">💎Dodeca</button>
+        <button id="bY">🔼Pirám</button>
+    </div>
+    
+    <h3>🎯 TRANSFORMAR</h3>
+    <div class="g3">
+        <button id="mM" class="active">W Mover</button>
+        <button id="mR">E Rotar</button>
+        <button id="mS">R Escalar</button>
+    </div>
+    
+    <h3>🎨 COLOR</h3>
+    <div class="cs">
+        <div class="hex">
+            <input type="text" id="hx" value="#909090" maxlength="7">
+            <div class="hp" id="hp" style="background:#909090"></div>
+            <input type="color" id="cp" value="#909090" style="width:24px;height:20px;border:none">
+        </div>
+        <div class="g6" id="sw"></div>
+        <div class="sr">
+            <label>Opacidad:</label>
+            <input type="range" id="al" min="0" max="1" step="0.05" value="1">
+            <span class="sv" id="av">100%</span>
+        </div>
+        <div class="mp">
+            <div class="mb" id="mp" style="background:#909090"></div>
+            <div class="mi"><span id="mc">#909090</span><span id="ma">100%</span></div>
+        </div>
+    </div>
+    
+    <h3>🖼️ TEXTURAS</h3>
+    <div class="tg" id="tx"></div>
+    
+    <h3>⚙️ MATERIAL</h3>
+    <div class="sr">
+        <label>Metal:</label>
+        <input type="range" id="mt" min="0" max="1" step="0.05" value="0.2">
+        <span class="sv" id="mv">.20</span>
+    </div>
+    <div class="sr">
+        <label>Rugoso:</label>
+        <input type="range" id="rg" min="0" max="1" step="0.05" value="0.5">
+        <span class="sv" id="rv">.50</span>
+    </div>
+    <div class="sr">
+        <label>Emi:</label>
+        <input type="range" id="em" min="0" max="1" step="0.05" value="0">
+        <span class="sv" id="ev">.00</span>
+    </div>
+    
+    <h3>💾 ACCIONES</h3>
+    <div class="g3">
+        <button id="dup" class="warn">📋Dup</button>
+        <button id="del" class="danger">🗑️Borrar</button>
+        <button id="rst">🔄Cám</button>
+    </div>
+    <button id="exp" class="warn" style="margin-top:4px">🚀 EXPORTAR JSON</button>
+    
+    <div class="inf"><b>W/E/R:</b> Gizmo | <b>Click Vacío:</b> Deseleccionar</div>
+</div>
+
+<script type="importmap">
+  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/TransformControls.js';
+
+const S = i => document.getElementById(i);
+const sc = new THREE.Scene();
+sc.background = new THREE.Color(0x111111);
+
+const ca = new THREE.PerspectiveCamera(60, (window.innerWidth - 310) / window.innerHeight, 0.1, 1000);
+ca.position.set(8, 6, 8);
+
+const re = new THREE.WebGLRenderer({ antialias: true });
+re.setSize(window.innerWidth - 310, window.innerHeight);
+document.body.appendChild(re.domElement);
+
+sc.add(new THREE.GridHelper(30, 30, 0x00ffcc, 0x333333));
+sc.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+const dl = new THREE.DirectionalLight(0xffffff, 1);
+dl.position.set(10, 20, 10);
+sc.add(dl);
+
+const oc = new OrbitControls(ca, re.domElement);
+const tc = new TransformControls(ca, re.domElement);
+tc.addEventListener('dragging-changed', e => oc.enabled = !e.value);
+sc.add(tc);
+
+let ob = [], sl = null, cc = '#909090', ca_ = 1, curTexId = 0;
+
+// --- GENERADOR DE TEXTURAS PROCEDURALES (Magia de Canvas para evitar CORS) ---
+const texData = [
+    { n: 'Lisa', draw: ctx => { ctx.fillStyle='#fff'; ctx.fillRect(0,0,64,64); } },
+    { n: 'Madera', draw: ctx => { ctx.fillStyle='#8b5a2b'; ctx.fillRect(0,0,64,64); ctx.fillStyle='#6b3e1b'; for(let i=0;i<64;i+=6) ctx.fillRect(i,0,2,64); } },
+    { n: 'Roca', draw: ctx => { for(let x=0;x<64;x+=2)for(let y=0;y<64;y+=2){ ctx.fillStyle=`hsl(0,0%,${30+Math.random()*30}%)`; ctx.fillRect(x,y,2,2); } } },
+    { n: 'Agua', draw: ctx => { ctx.fillStyle='#0066cc'; ctx.fillRect(0,0,64,64); ctx.fillStyle='#3399ff'; for(let i=0;i<25;i++){ ctx.beginPath(); ctx.arc(Math.random()*64,Math.random()*64,Math.random()*5,0,Math.PI*2); ctx.fill(); } } },
+    { n: 'Ladrillo', draw: ctx => { ctx.fillStyle='#b22222'; ctx.fillRect(0,0,64,64); ctx.fillStyle='#ddd'; for(let y=0;y<64;y+=16){ ctx.fillRect(0,y,64,2); for(let x=(y%32===0?0:16);x<64;x+=32) ctx.fillRect(x,y,2,16); } } },
+    { n: 'Césped', draw: ctx => { ctx.fillStyle='#2d5a27'; ctx.fillRect(0,0,64,64); for(let i=0;i<150;i++){ ctx.fillStyle=Math.random()>0.5?'#3a7a33':'#1f401b'; ctx.fillRect(Math.random()*64,Math.random()*64,2,3); } } },
+    { n: 'Metal', draw: ctx => { const g=ctx.createLinearGradient(0,0,64,64); g.addColorStop(0,'#555'); g.addColorStop(0.5,'#aaa'); g.addColorStop(1,'#444'); ctx.fillStyle=g; ctx.fillRect(0,0,64,64); } },
+    { n: 'Arena', draw: ctx => { ctx.fillStyle='#e6c280'; ctx.fillRect(0,0,64,64); for(let i=0;i<300;i++){ ctx.fillStyle=`rgba(139,69,19,${Math.random()*0.3})`; ctx.fillRect(Math.random()*64,Math.random()*64,1,1); } } },
+    { n: 'Lava', draw: ctx => { ctx.fillStyle='#ff3300'; ctx.fillRect(0,0,64,64); for(let i=0;i<50;i++){ ctx.fillStyle=Math.random()>0.5?'#ffaa00':'#990000'; ctx.beginPath(); ctx.arc(Math.random()*64,Math.random()*64,Math.random()*8,0,Math.PI*2); ctx.fill(); } } }
+];
+
+const texMats = [];
+const txDiv = S('tx');
+
+texData.forEach((d, i) => {
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+    const ctx = cv.getContext('2d');
+    d.draw(ctx);
+    const dataUrl = cv.toDataURL();
+    
+    const tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);
+    texMats.push(tex);
+    
+    const btn = document.createElement('div');
+    btn.className = i === 0 ? 'tb a' : 'tb';
+    btn.innerHTML = `<div class="tp" style="background-image:url(${dataUrl})"></div>${d.n}`;
+    btn.onclick = () => {
+        document.querySelectorAll('.tb').forEach(b => b.classList.remove('a'));
+        btn.classList.add('a');
+        curTexId = i;
+        if(sl) {
+            sl.material.map = i === 0 ? null : texMats[i];
+            sl.material.needsUpdate = true;
+        }
+    };
+    txDiv.appendChild(btn);
+});
+
+// --- PALETA DE COLORES ---
+const cp = ['#fff','#ccc','#999','#666','#333','#000','#f00','#f60','#fc0','#0f0','#0ff','#09f','#03f','#60f','#f0c','#841'];
+cp.forEach(h => {
+    const s = document.createElement('div');
+    s.className = 'sw'; s.style.background = h;
+    s.onclick = () => setC(h);
+    S('sw').appendChild(s);
+});
+
+function setC(h, a = ca_) {
+    cc = h; ca_ = a; S('cp').value = h; S('hx').value = h.toUpperCase(); 
+    S('hp').style.background = h; S('mp').style.background = h; S('mc').innerText = h.toUpperCase();
+    if(sl && sl.material) {
+        sl.material.color.set(h);
+        sl.material.opacity = parseFloat(a);
+        sl.material.transparent = a < 1;
+    }
+}
+
+S('cp').oninput = e => setC(e.target.value);
+S('hx').onchange = e => setC(e.target.value);
+
+// --- SLIDERS DE MATERIAL CONECTADOS ---
+S('al').oninput = e => { const v=e.target.value; ca_=v; S('av').innerText=Math.round(v*100)+'%'; S('ma').innerText=Math.round(v*100)+'%'; setC(cc, v); };
+S('mt').oninput = e => { const v=e.target.value; S('mv').innerText=parseFloat(v).toFixed(2); if(sl) sl.material.metalness=v; };
+S('rg').oninput = e => { const v=e.target.value; S('rv').innerText=parseFloat(v).toFixed(2); if(sl) sl.material.roughness=v; };
+S('em').oninput = e => { const v=e.target.value; S('ev').innerText=parseFloat(v).toFixed(2); if(sl) sl.material.emissive.set(cc).multiplyScalar(v); };
+
+// --- CREACIÓN DE OBJETOS ---
+function addM(g) {
+    const mat = new THREE.MeshStandardMaterial({
+        color: cc, 
+        metalness: S('mt').value, 
+        roughness: S('rg').value, 
+        transparent: ca_ < 1, 
+        opacity: ca_,
+        emissive: new THREE.Color(cc).multiplyScalar(S('em').value),
+        map: curTexId === 0 ? null : texMats[curTexId]
+    });
+    const m = new THREE.Mesh(g, mat);
+    m.position.y = 0.5;
+    sc.add(m); ob.push(m); sel(m);
+}
+
+function sel(o) {
+    sl = o;
+    if(o) {
+        tc.attach(o);
+        // Actualizar UI al seleccionar (básico)
+        S('hx').value = '#' + o.material.color.getHexString().toUpperCase();
+    } else {
+        tc.detach();
+    }
+}
+
+S('bB').onclick = () => addM(new THREE.BoxGeometry(1, 1, 1));
+S('bS').onclick = () => addM(new THREE.SphereGeometry(0.7, 32, 32));
+S('bC').onclick = () => addM(new THREE.CylinderGeometry(0.5, 0.5, 1, 32));
+S('bP').onclick = () => addM(new THREE.PlaneGeometry(1, 1));
+S('bK').onclick = () => addM(new THREE.ConeGeometry(0.6, 1, 32));
+S('bT').onclick = () => addM(new THREE.TorusGeometry(0.5, 0.2, 16, 64));
+S('bD').onclick = () => addM(new THREE.DodecahedronGeometry(0.7));
+S('bY').onclick = () => addM(new THREE.CylinderGeometry(0, 0.6, 1, 4));
+
+// --- HERRAMIENTAS GIZMO ---
+const upT = (m, id) => { tc.setMode(m); document.querySelectorAll('.active').forEach(b => b.classList.remove('active')); S(id).classList.add('active'); };
+S('mM').onclick = () => upT('translate', 'mM');
+S('mR').onclick = () => upT('rotate', 'mR');
+S('mS').onclick = () => upT('scale', 'mS');
+
+// --- ACCIONES DE TECLADO Y CLICKS ---
+S('del').onclick = () => { if(sl) { sc.remove(sl); ob = ob.filter(x => x !== sl); sel(null); } };
+S('dup').onclick = () => { if(sl) { const n = sl.clone(); n.position.x += 1; n.material = sl.material.clone(); sc.add(n); ob.push(n); sel(n); } };
+S('rst').onclick = () => ca.position.set(8, 6, 8);
+
+window.addEventListener('keydown', e => {
+    if(e.key === 'Delete' || e.key === 'Backspace') S('del').click();
+    if(e.key.toLowerCase() === 'w') S('mM').click();
+    if(e.key.toLowerCase() === 'e') S('mR').click();
+    if(e.key.toLowerCase() === 'r') S('mS').click();
+});
+
+re.domElement.addEventListener('pointerdown', e => {
+    const r = re.domElement.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    const y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    const rc = new THREE.Raycaster(); rc.setFromCamera({ x, y }, ca);
+    const h = rc.intersectObjects(ob);
+    if(h.length > 0 && !tc.dragging) sel(h[0].object);
+    else if(!tc.dragging) sel(null);
+});
+
+// --- RENDER LOOP ---
+function loop() { requestAnimationFrame(loop); re.render(sc, ca); } loop();
+
+window.onresize = () => { 
+    re.setSize(window.innerWidth - 310, window.innerHeight); 
+    ca.aspect = (window.innerWidth - 310) / window.innerHeight; 
+    ca.updateProjectionMatrix(); 
+};
+
+S('exp').onclick = () => alert("JSON Generado en Consola (F12)\n\n" + JSON.stringify(ob.map(o => ({ geo: o.geometry.type, pos: o.position, col: o.material.color.getHex() }))));
+
+</script>
+</body>
+</html>
+          
