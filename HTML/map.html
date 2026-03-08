@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>S.T.A. Architect - ZIP Exporter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --accent: #ff0055; --bg: #050505; --purple: #a020f0; }
+        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .editor-wrapper { display: flex; gap: 20px; background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; }
+        
+        .mode-selector { display: flex; flex-direction: column; gap: 10px; border-right: 1px solid #333; padding-right: 20px; }
+        .mode-btn { padding: 15px; background: #1a1a1a; border: 1px solid #444; color: #fff; cursor: pointer; border-radius: 5px; text-align: left; font-size: 14px; transition: 0.3s; }
+        .mode-btn.active { border-color: var(--accent); background: #331122; }
+
+        #grid { 
+            display: grid; 
+            grid-template-columns: repeat(30, 18px); 
+            grid-template-rows: repeat(30, 18px); 
+            background: #000; border: 1px solid #444;
+        }
+        .cell { width: 18px; height: 18px; border: 0.1px solid rgba(255,255,255,0.05); cursor: crosshair; position: relative; }
+        .cell.p-path::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(160, 32, 240, 0.6); pointer-events: none; }
+        
+        .panel { width: 200px; display: flex; flex-direction: column; gap: 10px; }
+        .tool { display: flex; align-items: center; gap: 10px; padding: 10px; background: #1a1a1a; border: 2px solid transparent; cursor: pointer; border-radius: 5px; font-size: 12px; }
+        .tool.active { border-color: var(--accent); background: #222; }
+        .swatch { width: 20px; height: 20px; border: 1px solid #fff; border-radius: 2px; }
+        
+        .controls { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        .toggle-btn { padding: 10px; border-radius: 5px; cursor: pointer; border: 1px solid #555; background: #222; color: #fff; font-size: 12px; }
+        .toggle-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+        button { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        h1 { margin: 0 0 10px 0; font-size: 22px; color: var(--accent); text-transform: uppercase; }
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>S.T.A. World Builder v8.2</h1>
+
+    <div class="controls">
+        <button onclick="descargarTodo()" style="background: #ffcc00;">📦 EXPORTAR ZIP</button>
+        <button style="background: #222; color: #00ff88; border: 1px solid #00ff88;" onclick="document.getElementById('importInput').click()">IMPORTAR PNG</button>
+        <div id="mirrorBtn" class="toggle-btn" onclick="toggleMirror()">ESPEJO: OFF</div>
+        <button style="background: #444; color: #fff;" onclick="limpiarMapa()">RESET</button>
+        <input type="file" id="importInput" accept="image/png" onchange="importarMapa(event)">
+    </div>
+
+    <div class="editor-wrapper">
+        <div class="mode-selector">
+            <div class="mode-btn active" id="btnMap" onclick="setMode('map')">📸 Mapa</div>
+            <div class="mode-btn" id="btnPeds" onclick="setMode('peds')">📸 Peatones</div>
+        </div>
+
+        <div id="grid"></div>
+
+        <div class="panel" id="palette">
+            <div id="mapTools">
+                <div class="tool active" data-color="0,0,0,0">
+                    <div class="swatch" style="background: #000;"></div> VACÍO (Calle)
+                </div>
+                <div class="tool" data-color="255,0,0,255">
+                    <div class="swatch" style="background: #ff0000;"></div> EDIFICIO (Rojo)
+                </div>
+                <div class="tool" data-color="208,255,0,255">
+                    <div class="swatch" style="background: #d0ff00;"></div> CASA (Amarillo)
+                </div>
+                <div class="tool" data-color="138,138,138,255">
+                    <div class="swatch" style="background: #8A8A8A;"></div> ACERA (Gris)
+                </div>
+                <div class="tool" data-color="173,235,179,255">
+                    <div class="swatch" style="background: #adebb3;"></div> ARBUSTO
+                </div>
+                <div class="tool" data-color="0,179,8,255">
+                    <div class="swatch" style="background: #00b308;"></div> MURO (Verde)
+                </div>
+                <div class="tool" data-color="0,0,255,255">
+                    <div class="swatch" style="background: #0000ff;"></div> LOOT (Azul)
+                </div>
+            </div>
+
+            <div id="pedTools" style="display:none;">
+                <div class="tool active" data-color="160,32,240,255">
+                    <div class="swatch" style="background: #a020f0;"></div> RUTA PEATÓN (Morado)
+                </div>
+                <div class="tool" data-color="erase">
+                    <div class="swatch" style="background: #444;"></div> BORRAR RUTA
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="exportCanvas" width="30" height="30" style="display:none;"></canvas>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const palette = document.getElementById('palette');
+        let currentColor = "0,0,0,0";
+        let isDrawing = false;
+        let mirrorMode = false;
+        let currentMode = 'map';
+
+        for (let i = 0; i < 900; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.index = i;
+            cell.dataset.color = "0,0,0,0";
+            cell.dataset.ped = "0";
+            cell.addEventListener('mousedown', () => { isDrawing = true; handlePaint(i); });
+            cell.addEventListener('mouseover', () => { if(isDrawing) handlePaint(i); });
+            grid.appendChild(cell);
+        }
+
+        window.addEventListener('mouseup', () => isDrawing = false);
+
+        palette.querySelectorAll('.tool').forEach(tool => {
+            tool.addEventListener('click', () => {
+                const parent = tool.parentElement;
+                parent.querySelectorAll('.active').forEach(a => a.classList.remove('active'));
+                tool.classList.add('active');
+                currentColor = tool.dataset.color;
+            });
+        });
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(mode === 'map' ? 'btnMap' : 'btnPeds').classList.add('active');
+            document.getElementById('mapTools').style.display = mode === 'map' ? 'block' : 'none';
+            document.getElementById('pedTools').style.display = mode === 'peds' ? 'block' : 'none';
+            if(mode === 'peds') currentColor = "160,32,240,255";
+            else currentColor = document.querySelector('#mapTools .active').dataset.color;
+        }
+
+        function handlePaint(index) {
+            const x = index % 30;
+            const y = Math.floor(index / 30);
+            paintCell(x, y);
+            if (mirrorMode) paintCell(29 - x, y);
+        }
+
+        function paintCell(x, y) {
+            const index = y * 30 + x;
+            const cell = grid.children[index];
+            if (currentMode === 'map') {
+                const tool = palette.querySelector(`[data-color="${currentColor}"] .swatch`);
+                if(tool) {
+                    const visualColor = tool.style.background;
+                    cell.style.background = visualColor === "rgb(0, 0, 0)" ? "transparent" : visualColor;
+                    cell.dataset.color = currentColor;
+                }
+            } else {
+                if (currentColor === "erase") { cell.classList.remove('p-path'); cell.dataset.ped = "0"; }
+                else { cell.classList.add('p-path'); cell.dataset.ped = "1"; }
+            }
+        }
+
+        function toggleMirror() {
+            mirrorMode = !mirrorMode;
+            const btn = document.getElementById('mirrorBtn');
+            btn.innerText = `ESPEJO: ${mirrorMode ? 'ON' : 'OFF'}`;
+            btn.classList.toggle('on');
+        }
+
+        // GENERACIÓN DEL ZIP
+        async function descargarTodo() {
+            const zip = new JSZip();
+            const canvas = document.getElementById('exportCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // 1. Generar map.png
+            const mapData = ctx.createImageData(30, 30);
+            Array.from(grid.children).forEach((cell, i) => {
+                const c = cell.dataset.color.split(',').map(Number);
+                mapData.data[i*4] = c[0]; mapData.data[i*4+1] = c[1]; mapData.data[i*4+2] = c[2]; mapData.data[i*4+3] = c[3];
+            });
+            ctx.putImageData(mapData, 0, 0);
+            const mapBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            zip.file("map.png", mapBlob);
+
+            // 2. Generar peatones.png
+            const pedData = ctx.createImageData(30, 30);
+            Array.from(grid.children).forEach((cell, i) => {
+                if (cell.dataset.ped === "1") {
+                    pedData.data[i*4] = 160; pedData.data[i*4+1] = 32; pedData.data[i*4+2] = 240; pedData.data[i*4+3] = 255;
+                } else {
+                    pedData.data[i*4] = 0; pedData.data[i*4+1] = 0; pedData.data[i*4+2] = 0; pedData.data[i*4+3] = 0;
+                }
+            });
+            ctx.putImageData(pedData, 0, 0);
+            const pedBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            zip.file("peatones.png", pedBlob);
+
+            // 3. Descargar el ZIP
+            const content = await zip.generateAsync({type:"blob"});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = "mundo_sta.zip";
+            link.click();
+        }
+
+        function importarMapa(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.getElementById('exportCanvas');
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, 30, 30);
+                    ctx.drawImage(img, 0, 0, 30, 30);
+                    const imgData = ctx.getImageData(0, 0, 30, 30).data;
+                    for (let i = 0; i < 900; i++) {
+                        const r = imgData[i*4], g = imgData[i*4+1], b = imgData[i*4+2], a = imgData[i*4+3];
+                        const cell = grid.children[i];
+                        if (r === 160 && g === 32 && b === 240) {
+                            cell.classList.add('p-path'); cell.dataset.ped = "1";
+                        } else {
+                            const colorStr = `${r},${g},${b},${a}`;
+                            cell.dataset.color = colorStr;
+                            cell.style.background = (a === 0 || (r===0 && g===0 && b===0)) ? "transparent" : `rgb(${r},${g},${b})`;
+                        }
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function limpiarMapa() { 
+            if(confirm("¿Borrar capa actual?")) {
+                Array.from(grid.children).forEach(cell => {
+                    if(currentMode === 'map') { cell.style.background = "transparent"; cell.dataset.color = "0,0,0,0"; }
+                    else { cell.classList.remove('p-path'); cell.dataset.ped = "0"; }
+                });
+            } 
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>PattitexTEC Ultra-Visor</title>
+    <style>
+        body { margin: 0; background: #0a0a0a; color: #00ffcc; font-family: 'Courier New', monospace; overflow: hidden; }
+        #interface { position: absolute; top: 10px; left: 10px; z-index: 100; background: rgba(0,0,0,0.85); padding: 15px; border: 1px solid #00ffcc; border-radius: 4px; width: 280px; }
+        h3 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #00ffcc; padding-bottom: 5px; }
+        input[type="file"] { width: 100%; background: #222; color: #00ffcc; border: 1px solid #00ffcc; padding: 5px; cursor: pointer; }
+        #status { margin-top: 10px; font-size: 11px; color: #ffcc00; word-break: break-all; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+<div id="interface">
+    <h3>S.T.A. ULTRA-VISOR</h3>
+    <input type="file" id="loader" accept=".js">
+    <div id="status">Esperando modelo...</div>
+</div>
+
+<script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+    // Escena Base
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(3, 3, 3);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    // Iluminación para que el óxido y la tienda se vean bien
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    sun.position.set(5, 10, 7);
+    scene.add(sun);
+    scene.add(new THREE.GridHelper(10, 10, 0x444444, 0x222222));
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    let currentModel = null;
+
+    const status = document.getElementById('status');
+
+    document.getElementById('loader').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (currentModel) scene.remove(currentModel);
+        status.innerText = "Procesando: " + file.name;
+
+        try {
+            // LECTURA ROBUSTA: Leemos como texto para arreglar el código antes de ejecutarlo
+            const text = await file.text();
+            
+            // "Hack" para que Three.js siempre funcione sin importar qué ponga el archivo
+            const fixedCode = text.replace(/from\s+['"]three['"]/g, "from 'https://unpkg.com/three@0.160.0/build/three.module.js'");
+            
+            const blob = new Blob([fixedCode], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+            
+            const modulo = await import(url);
+            const funcName = Object.keys(modulo).find(k => k.startsWith('crear'));
+
+            if (funcName) {
+                currentModel = modulo[funcName](THREE);
+                scene.add(currentModel);
+                status.style.color = "#00ffcc";
+                status.innerText = "¡Cargado: " + funcName + "!";
+            } else {
+                throw new Error("No hay función 'crear...'");
+            }
+        } catch (err) {
+            status.style.color = "#ff4444";
+            status.innerText = "Error: " + err.message;
+            console.error(err);
+        }
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+</script>
+</body>
+</html>
+
