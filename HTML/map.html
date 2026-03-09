@@ -37,7 +37,7 @@
 </head>
 <body>
 
-    <h1>S.T.A. World Builder v8.2</h1>
+    <h1>S.T.A. World Builder v8.5</h1>
 
     <div class="controls">
         <button onclick="descargarTodo()" style="background: #ffcc00;">📦 EXPORTAR ZIP</button>
@@ -65,6 +65,9 @@
                 </div>
                 <div class="tool" data-color="208,255,0,255">
                     <div class="swatch" style="background: #d0ff00;"></div> CASA (Amarillo)
+                </div>
+                <div class="tool" data-color="0,206,200,255">
+                    <div class="swatch" style="background: #00CEC8;"></div> TIENDA (Cian)
                 </div>
                 <div class="tool" data-color="138,138,138,255">
                     <div class="swatch" style="background: #8A8A8A;"></div> ACERA (Gris)
@@ -163,13 +166,11 @@
             btn.classList.toggle('on');
         }
 
-        // GENERACIÓN DEL ZIP
         async function descargarTodo() {
             const zip = new JSZip();
             const canvas = document.getElementById('exportCanvas');
             const ctx = canvas.getContext('2d');
 
-            // 1. Generar map.png
             const mapData = ctx.createImageData(30, 30);
             Array.from(grid.children).forEach((cell, i) => {
                 const c = cell.dataset.color.split(',').map(Number);
@@ -179,7 +180,6 @@
             const mapBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
             zip.file("map.png", mapBlob);
 
-            // 2. Generar peatones.png
             const pedData = ctx.createImageData(30, 30);
             Array.from(grid.children).forEach((cell, i) => {
                 if (cell.dataset.ped === "1") {
@@ -192,7 +192,6 @@
             const pedBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
             zip.file("peatones.png", pedBlob);
 
-            // 3. Descargar el ZIP
             const content = await zip.generateAsync({type:"blob"});
             const link = document.createElement('a');
             link.href = URL.createObjectURL(content);
@@ -239,4 +238,5 @@
         }
     </script>
 </body>
-</html>
+    </html>
+    
