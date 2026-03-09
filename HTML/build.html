@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Salamandra Studio Lite</title>
+<title>Salamandra Studio Lite v2.0</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #0a0a0a; color: #00ffcc; font: 11px monospace; overflow: hidden; display: flex; }
@@ -11,7 +11,6 @@ canvas { flex: 1; outline: none; display: block; }
 h2 { font-size: 14px; margin: 0 0 6px; text-align: center; color: #ff0055; text-shadow: 0 0 8px #f058; }
 h3 { color: #00ffcc; border-bottom: 1px solid #333; margin: 4px 0 2px; font-size: 10px; text-transform: uppercase; }
 
-/* Botones 5% más grandes */
 button { background: #00ffcc; border: none; padding: 4.2px 6.3px; cursor: pointer; font-weight: 700; border-radius: 2px; color: #000; font-size: 10.5px; transition: .1s; }
 button:hover { background: #fff; transform: scale(1.02); }
 .active { background: #f058!important; color: #fff; }
@@ -33,7 +32,6 @@ button:hover { background: #fff; transform: scale(1.02); }
 .sr input { flex: 1; accent-color: #0ff; height: 3px; cursor: pointer; }
 .sv { min-width: 25px; text-align: right; color: #0ff; font-size: 9px; }
 
-/* Grid de Texturas Actualizado */
 .tg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .tb { background: #222; border: 1px solid #444; padding: 3px; font-size: 9px; text-align: center; cursor: pointer; border-radius: 3px; transition: 0.1s; }
 .tb:hover { border-color: #0ff; }
@@ -116,7 +114,7 @@ button:hover { background: #fff; transform: scale(1.02); }
         <button id="del" class="danger">🗑️Borrar</button>
         <button id="rst">🔄Cám</button>
     </div>
-    <button id="exp" class="warn" style="margin-top:4px">🚀 EXPORTAR JSON</button>
+    <button id="exp" class="warn" style="margin-top:4px; width:100%">🚀 EXPORTAR .JS</button>
     
     <div class="inf"><b>W/E/R:</b> Gizmo | <b>Click Vacío:</b> Deseleccionar</div>
 </div>
@@ -154,7 +152,6 @@ sc.add(tc);
 
 let ob = [], sl = null, cc = '#909090', ca_ = 1, curTexId = 0;
 
-// --- GENERADOR DE TEXTURAS PROCEDURALES (Magia de Canvas para evitar CORS) ---
 const texData = [
     { n: 'Lisa', draw: ctx => { ctx.fillStyle='#fff'; ctx.fillRect(0,0,64,64); } },
     { n: 'Madera', draw: ctx => { ctx.fillStyle='#8b5a2b'; ctx.fillRect(0,0,64,64); ctx.fillStyle='#6b3e1b'; for(let i=0;i<64;i+=6) ctx.fillRect(i,0,2,64); } },
@@ -175,28 +172,21 @@ texData.forEach((d, i) => {
     const ctx = cv.getContext('2d');
     d.draw(ctx);
     const dataUrl = cv.toDataURL();
-    
     const tex = new THREE.CanvasTexture(cv);
-    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(2, 2);
     texMats.push(tex);
-    
     const btn = document.createElement('div');
     btn.className = i === 0 ? 'tb a' : 'tb';
     btn.innerHTML = `<div class="tp" style="background-image:url(${dataUrl})"></div>${d.n}`;
     btn.onclick = () => {
         document.querySelectorAll('.tb').forEach(b => b.classList.remove('a'));
-        btn.classList.add('a');
-        curTexId = i;
-        if(sl) {
-            sl.material.map = i === 0 ? null : texMats[i];
-            sl.material.needsUpdate = true;
-        }
+        btn.classList.add('a'); curTexId = i;
+        if(sl) { sl.material.map = i === 0 ? null : texMats[i]; sl.material.needsUpdate = true; }
     };
     txDiv.appendChild(btn);
 });
 
-// --- PALETA DE COLORES ---
 const cp = ['#fff','#ccc','#999','#666','#333','#000','#f00','#f60','#fc0','#0f0','#0ff','#09f','#03f','#60f','#f0c','#841'];
 cp.forEach(h => {
     const s = document.createElement('div');
@@ -217,21 +207,15 @@ function setC(h, a = ca_) {
 
 S('cp').oninput = e => setC(e.target.value);
 S('hx').onchange = e => setC(e.target.value);
-
-// --- SLIDERS DE MATERIAL CONECTADOS ---
 S('al').oninput = e => { const v=e.target.value; ca_=v; S('av').innerText=Math.round(v*100)+'%'; S('ma').innerText=Math.round(v*100)+'%'; setC(cc, v); };
 S('mt').oninput = e => { const v=e.target.value; S('mv').innerText=parseFloat(v).toFixed(2); if(sl) sl.material.metalness=v; };
 S('rg').oninput = e => { const v=e.target.value; S('rv').innerText=parseFloat(v).toFixed(2); if(sl) sl.material.roughness=v; };
 S('em').oninput = e => { const v=e.target.value; S('ev').innerText=parseFloat(v).toFixed(2); if(sl) sl.material.emissive.set(cc).multiplyScalar(v); };
 
-// --- CREACIÓN DE OBJETOS ---
 function addM(g) {
     const mat = new THREE.MeshStandardMaterial({
-        color: cc, 
-        metalness: S('mt').value, 
-        roughness: S('rg').value, 
-        transparent: ca_ < 1, 
-        opacity: ca_,
+        color: cc, metalness: S('mt').value, roughness: S('rg').value, 
+        transparent: ca_ < 1, opacity: ca_,
         emissive: new THREE.Color(cc).multiplyScalar(S('em').value),
         map: curTexId === 0 ? null : texMats[curTexId]
     });
@@ -244,11 +228,10 @@ function sel(o) {
     sl = o;
     if(o) {
         tc.attach(o);
-        // Actualizar UI al seleccionar (básico)
         S('hx').value = '#' + o.material.color.getHexString().toUpperCase();
-    } else {
-        tc.detach();
-    }
+        S('mt').value = o.material.metalness; S('mv').innerText = o.material.metalness.toFixed(2);
+        S('rg').value = o.material.roughness; S('rv').innerText = o.material.roughness.toFixed(2);
+    } else { tc.detach(); }
 }
 
 S('bB').onclick = () => addM(new THREE.BoxGeometry(1, 1, 1));
@@ -260,13 +243,11 @@ S('bT').onclick = () => addM(new THREE.TorusGeometry(0.5, 0.2, 16, 64));
 S('bD').onclick = () => addM(new THREE.DodecahedronGeometry(0.7));
 S('bY').onclick = () => addM(new THREE.CylinderGeometry(0, 0.6, 1, 4));
 
-// --- HERRAMIENTAS GIZMO ---
 const upT = (m, id) => { tc.setMode(m); document.querySelectorAll('.active').forEach(b => b.classList.remove('active')); S(id).classList.add('active'); };
 S('mM').onclick = () => upT('translate', 'mM');
 S('mR').onclick = () => upT('rotate', 'mR');
 S('mS').onclick = () => upT('scale', 'mS');
 
-// --- ACCIONES DE TECLADO Y CLICKS ---
 S('del').onclick = () => { if(sl) { sc.remove(sl); ob = ob.filter(x => x !== sl); sel(null); } };
 S('dup').onclick = () => { if(sl) { const n = sl.clone(); n.position.x += 1; n.material = sl.material.clone(); sc.add(n); ob.push(n); sel(n); } };
 S('rst').onclick = () => ca.position.set(8, 6, 8);
@@ -288,7 +269,6 @@ re.domElement.addEventListener('pointerdown', e => {
     else if(!tc.dragging) sel(null);
 });
 
-// --- RENDER LOOP ---
 function loop() { requestAnimationFrame(loop); re.render(sc, ca); } loop();
 
 window.onresize = () => { 
@@ -297,9 +277,45 @@ window.onresize = () => {
     ca.updateProjectionMatrix(); 
 };
 
-S('exp').onclick = () => alert("JSON Generado en Consola (F12)\n\n" + JSON.stringify(ob.map(o => ({ geo: o.geometry.type, pos: o.position, col: o.material.color.getHex() }))));
+// --- EXPORTADOR A .JS (DESCARGABLE) ---
+S('exp').onclick = () => {
+    let jsCode = `import * as THREE from 'three';\n\n`;
+    jsCode += `/**\n * Modelo generado con Salamandra Studio Lite\n */\n`;
+    jsCode += `export function crearModelo() {\n`;
+    jsCode += `    const grupo = new THREE.Group();\n\n`;
 
+    ob.forEach((o, i) => {
+        const type = o.geometry.type;
+        const p = o.position, r = o.rotation, s = o.scale;
+        const m = o.material;
+        const hex = "#" + m.color.getHexString();
+        
+        jsCode += `    // Objeto ${i+1}: ${type}\n`;
+        jsCode += `    const geo${i} = new THREE.${type}(${JSON.stringify(o.geometry.parameters).slice(1, -1)});\n`;
+        jsCode += `    const mat${i} = new THREE.MeshStandardMaterial({\n`;
+        jsCode += `        color: "${hex}",\n`;
+        jsCode += `        metalness: ${m.metalness},\n`;
+        jsCode += `        roughness: ${m.roughness},\n`;
+        jsCode += `        opacity: ${m.opacity},\n`;
+        jsCode += `        transparent: ${m.transparent}\n`;
+        jsCode += `    });\n`;
+        jsCode += `    const obj${i} = new THREE.Mesh(geo${i}, mat${i});\n`;
+        jsCode += `    obj${i}.position.set(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)});\n`;
+        jsCode += `    obj${i}.rotation.set(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)});\n`;
+        jsCode += `    obj${i}.scale.set(${s.x.toFixed(3)}, ${s.y.toFixed(3)}, ${s.z.toFixed(3)});\n`;
+        jsCode += `    grupo.add(obj${i});\n\n`;
+    });
+
+    jsCode += `    return grupo;\n}`;
+
+    const blob = new Blob([jsCode], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'modelo_salamandra.js';
+    link.click();
+    URL.revokeObjectURL(url);
+};
 </script>
 </body>
 </html>
-          
