@@ -5,7 +5,7 @@
     <title>S.T.A. Architect - ZIP Exporter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        :root { --accent: #ff0055; --bg: #050505; --purple: #a020f0; }
+        :root { --accent: #ff0055; --bg: #050505; --purple: #a020f0; --water: #00CCFF; }
         body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .editor-wrapper { display: flex; gap: 20px; background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; }
         
@@ -66,8 +66,8 @@
                 <div class="tool" data-color="208,255,0,255">
                     <div class="swatch" style="background: #d0ff00;"></div> CASA (Amarillo)
                 </div>
-                <div class="tool" data-color="0,206,200,255">
-                    <div class="swatch" style="background: #00CEC8;"></div> TIENDA (Cian)
+                <div class="tool" data-color="0,204,255,255">
+                    <div class="swatch" style="background: var(--water);"></div> AGUA (Celeste)
                 </div>
                 <div class="tool" data-color="138,138,138,255">
                     <div class="swatch" style="background: #8A8A8A;"></div> ACERA (Gris)
@@ -150,7 +150,7 @@
                 const tool = palette.querySelector(`[data-color="${currentColor}"] .swatch`);
                 if(tool) {
                     const visualColor = tool.style.background;
-                    cell.style.background = visualColor === "rgb(0, 0, 0)" ? "transparent" : visualColor;
+                    cell.style.background = (visualColor === "rgb(0, 0, 0)" || visualColor === "#000") ? "transparent" : visualColor;
                     cell.dataset.color = currentColor;
                 }
             } else {
